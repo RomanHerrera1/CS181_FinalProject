@@ -74,6 +74,57 @@ def make_codenames_guess( clue, LoW, m ):
         LoS = LoS + [ (score,word) ]
     return LoS
 
+def generate_board(model):
+  """
+  Generates random valid player boards and spymaster boards and returns them
+
+  Input:
+  - model is a word2vec model that is checked to see
+    if the words chosen exist in the model
+
+  Output:
+  - player_board is a list of strings which represents the board of words
+  - spymaster_board is a list of tuples (word, type) which represents the
+    board of words with the type of each word
+    (such as whether the word is red, blue, bystander, assassin)
+  """
+  
+  player_board = []
+  spymaster_board = []
+  not_valid = []
+
+  num_red = 0
+  num_blue = 0
+  num_bystander = 7
+  num_assassin = 1
+
+  if random.randint(0,1) == 1:
+      num_red = 9
+      num_blue = 8
+  else:
+      num_red = 8
+      num_blue = 9
+
+  options = ["red"] * num_red + ["blue"] * num_blue + ["bystander"] * num_bystander + ["assassin"] * num_assassin
+
+  while len(player_board) < 25:
+      rand_card = list(random.choice(A))
+
+      if (rand_card not in not_valid):   # Checks to see if the given card was already used
+          
+          # Adds the chosen card to the list of used cards
+          not_valid.append(rand_card)
+          rand_word = rand_card[random.randint(0, 1)]
+          
+          # Adds the random word to the player board
+          player_board.append(rand_word)
+          
+          # Adds the random word to the spymaster board with a "team" attached and removes that option from options
+          rand_option = random.choice(options)
+          spymaster_board.append((rand_word, rand_option))
+          options.remove(rand_option)
+
+  return player_board, spymaster_board
 
 
 if __name__ == '__main__':
