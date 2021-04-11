@@ -22,6 +22,8 @@ from gensim.models import KeyedVectors
 from gensim import matutils
 import random
 
+# We import Googles word2vec model. It contains over 3 million words.
+# This import can take awhile.
 import gensim.downloader as api
 wv = api.load('word2vec-google-news-300')
 
@@ -36,15 +38,29 @@ def guess_words_given_clue(clue, board, model):
   - model is the word2vec model used for the guessing
   
   Outputs:
-  - n number of words as guesses based on the clue in highest probability
+  - a list of n number of words as guesses based on the clue in highest probability
   """
   word, num_words = clue
+  rank = []
 
+  # Checks to see if the clue word is in the model
+  if word not in model:
+    print(f"AHH the word {word} is not in the model. Try a different clue for me.")
+    return []
+  
+  # Iterates through each word in the board and adds each tuple
+  # of the similarity_score from the similarity function and
+  # its corresponding_word to our rank list
   for word in board:
-    pass
+    score = wv.similarity(clue, word)
+    rank.append((score,word))
+
+  # Sort the list in descending score
+  rank = sorted(rank, reverse=True)
+  return rank[0:num_words]
 
 
-def score_clue(clue, board, intended):
+def score_clue(clue, board, intended, model):
   """
   Calls guess_words_given_clue() to give a rating of how well the intended
   words ranked
@@ -58,6 +74,17 @@ def score_clue(clue, board, intended):
   Outputs:
   - A score of how well the clue is
   """
+
+  clueword, num_words = clue
+  rank = guess_score_given_clue((clueword, 25), board, model)
+  indices = []
+  for i in range(0, len(rank)): # rank is (score, word)
+    if rank[i][1] in intended:
+      indices.append((i,rank[i][0]))
+      
+    # can also check how well assassin and other team words ranked
+      
+
 
 def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = []):
   """
