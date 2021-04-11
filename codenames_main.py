@@ -38,6 +38,10 @@ def guess_words_given_clue(clue, board, model):
   Outputs:
   - n number of words as guesses based on the clue in highest probability
   """
+  word, num_words = clue
+
+  for word in board:
+    pass
 
 
 def score_clue(clue, board, intended):
