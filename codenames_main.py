@@ -6,6 +6,24 @@
 # Collaborators: Roman Herrera, Kobe Lin, Valentina Vallalta, Alina Saratova
 #
 
+# our libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set(style="darkgrid")
+import nltk
+import textblob
+import pandas as pd
+from textblob import Word
+from textblob.wordnet import VERB
+from textblob.wordnet import Synset
+from textblob import TextBlob
+from gensim.models import KeyedVectors
+from gensim import matutils
+import random
+
+import gensim.downloader as api
+wv = api.load('word2vec-google-news-300')
 
 def guess_words_given_clue(clue, board, model): 
   """ 
@@ -37,7 +55,7 @@ def score_clue(clue, board, intended):
   - A score of how well the clue is
   """
 
-def give_clue(own_words, opponent_words = [], neutral_words = [], assassin_word = [], model):
+def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = []):
   """
   Given a team color and a board, it will use the word2vec model to return a valid clue
   using various heuristics
@@ -87,30 +105,48 @@ def generate_board(model):
   - spymaster_board is a list of tuples (word, type) which represents the
     board of words with the type of each word
     (such as whether the word is red, blue, bystander, assassin)
+  - first is a string saying which team (red or blue) is going first
   """
   
+  # let's read in our word data...
+  filename = 'Wordlist.csv'
+  df = pd.read_csv(filename, header=None)   # encoding="latin1" et al.
+  print(f"{filename} : file read into a pandas dataframe.")
+
+  # Convert to a numpy array
+  A = df.values
+
+  # Initialize lists and values
   player_board = []
   spymaster_board = []
   not_valid = []
-
   num_red = 0
   num_blue = 0
   num_bystander = 7
   num_assassin = 1
+  first = ""
 
+  # Randomly determines which team gets the extra card and goes first
   if random.randint(0,1) == 1:
       num_red = 9
       num_blue = 8
+      first = "red"
   else:
       num_red = 8
       num_blue = 9
+      first = "blue"
 
-  options = ["red"] * num_red + ["blue"] * num_blue + ["bystander"] * num_bystander + ["assassin"] * num_assassin
+  options = ["red"] * num_red + ["blue"] * num_blue +\
+    ["bystander"] * num_bystander + ["assassin"] * num_assassin
 
+  # Repeat until the board is completely filled up
   while len(player_board) < 25:
       rand_card = list(random.choice(A))
+      word1 = rand_card[0]
+      word2 = rand_card[1]
 
-      if (rand_card not in not_valid):   # Checks to see if the given card was already used
+      # Checks to see if the given card was already used or is not in the model
+      if (rand_card not in not_valid) and (word1 in model) and (word2 in model):
           
           # Adds the chosen card to the list of used cards
           not_valid.append(rand_card)
@@ -123,14 +159,20 @@ def generate_board(model):
           rand_option = random.choice(options)
           spymaster_board.append((rand_word, rand_option))
           options.remove(rand_option)
-
-  return player_board, spymaster_board
+  return player_board, spymaster_board, first
 
 
 if __name__ == '__main__':
-  clue = ("suit", 2)
-  LoW = [ "armor", "spring", "romans", "tuxedo" ]
-  m = m  # defined in another cell
-  LoS = make_codenames_guess( clue, LoW, m )
-  for pair in LoS:
-      print(f"{pair}")
+  
+  player, spymaster, first = generate_board(wv)
+
+  print(player)
+  print(spymaster)
+  print(first)
+
+  # clue = ("suit", 2)
+  # LoW = [ "armor", "spring", "romans", "tuxedo" ]
+  # m = m  # defined in another cell
+  # LoS = make_codenames_guess( clue, LoW, m )
+  # for pair in LoS:
+  #     print(f"{pair}")
