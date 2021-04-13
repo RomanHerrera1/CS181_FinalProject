@@ -22,10 +22,9 @@ from gensim.models import KeyedVectors
 from gensim import matutils
 import random
 
-# We import Googles word2vec model. It contains over 3 million words.
-# This import can take awhile.
-import gensim.downloader as api
-wv = api.load('word2vec-google-news-300')
+print("Before")
+from codenames_library import wv
+print("After")
 
 def guess_words_given_clue(clue, board, model): 
   """ 
