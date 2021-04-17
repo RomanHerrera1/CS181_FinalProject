@@ -14,7 +14,7 @@ Vacuum,Atlantis
 Unicorn,Spy
 Undertaker,Mail
 Sock,Nut
-Loch Ness,Log
+Loch_Ness,Log
 Horse,Pirate
 Berlin,Face
 Platypus,Stick
@@ -28,7 +28,7 @@ Space,Hook
 Flute,Carrot
 Tower,Poison
 Death,Stock
-Foot,New York
+Foot,New_York
 Torch,State
 Arm,Bermuda
 Figure,Park
@@ -100,7 +100,7 @@ Smuggler,England
 Train,Field
 Embassy,Robot
 Pupil,Plot
-Scuba Diver,Africa
+Scuba_Diver,Africa
 Ice,Tag
 Tap,Mouth
 Code,Kiwi
@@ -162,7 +162,7 @@ Draft,Ham
 Head,Litter
 Lap,Life
 Orange,Temple
-Ice Cream,Rabbit
+Ice_Cream,Rabbit
 Film,Button
 Washer,Game
 Pool,Star

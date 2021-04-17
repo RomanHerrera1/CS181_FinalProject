@@ -8,7 +8,7 @@
 
 # our libraries
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import seaborn as sns
 sns.set(style="darkgrid")
 import nltk
@@ -19,12 +19,13 @@ from textblob.wordnet import VERB
 from textblob.wordnet import Synset
 from textblob import TextBlob
 from gensim.models import KeyedVectors
-from gensim import matutils
+from gensim import matutils 
 import random
+from itertools import combinations
 
-print("Before")
+# print("Before")
 from codenames_library import wv
-print("After")
+# print("After")
 
 def guess_words_given_clue(clue, board, model): 
   """ 
@@ -100,7 +101,67 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
   Output:
   - A clue is a tuple that contains a one word string and an integer that
     is the number of words associated with the clue in the format (clueword, n)
+  - valid_combo is the words intended to be guesses, written as a list of strings
   """
+
+  valid_combo = []
+  num_words = 0
+  max_score = 0
+  clueword = ""
+
+  if len(own_words) == 1:
+    word, score = first_valid_word([own_words[0]], model.most_similar(positive=[own_words[0]], topn=100))
+    return word
+  
+  for i in range(min(5, len(own_words)), 1, -1):
+      comb = combinations(own_words, i)
+      for combo in comb:
+        word, score = first_valid_word(combo, model.most_similar(positive=[combo], topn=100))
+        word2, score2 = first_valid_word([word.lower() for word in combo], model.most_similar(positive=[combo], topn=100))
+  
+        if score2 > score:
+          score = score2
+          word = word2
+          
+        # MAY NEED TO CHANGE SCORE SYSTEM
+        if (score * i/2) > max_score:
+          max_score = score
+          num_words = i
+          valid_combo = combo
+          clueword = word
+
+  return (clueword, len(valid_combo)), valid_combo
+
+
+def does_not_share(a, b):
+  """ 
+  helper function that checks that string a has no characters from string b 
+  """
+  for i in a:
+    if i in b:
+      return False
+  return True
+
+
+def first_valid_word(words, similar_words, threshold = 0.6):
+  """ 
+  helper function that returns the first word that 
+  fits the qualifications for a clue and its score
+  """
+  do_not_put = "0123456789!_?*&"
+  for clue_word in similar_words:
+    if clue_word[1] > threshold:
+      curr = clue_word[0]
+
+      words_not_in_curr = True
+      for word in words:
+        if word in curr:
+          words_not_in_curr = False  
+      
+      if words_not_in_curr and (curr not in words) and does_not_share(curr, do_not_put):
+        return clue_word
+  return (None, 0)
+
 
 # Function given from Prof. Dodds :)
 def make_codenames_guess( clue, LoW, m ):
@@ -148,6 +209,7 @@ def generate_board(model):
 
   # Initialize lists and values
   player_board = []
+  player_edit_board = []
   spymaster_board = []
   not_valid = []
   num_red = 0
@@ -184,21 +246,63 @@ def generate_board(model):
           
           # Adds the random word to the player board
           player_board.append(rand_word)
+          player_edit_board.append((rand_word, ""))
+
           
           # Adds the random word to the spymaster board with a "team" attached and removes that option from options
           rand_option = random.choice(options)
           spymaster_board.append((rand_word, rand_option))
           options.remove(rand_option)
-  return player_board, spymaster_board, first
+  return player_board, spymaster_board, first, player_edit_board
+
+def display_player_board(board):
+  formatting = len(max(board, key=len))
+  print("-"*((formatting+2)*5))
+  counter = 0
+  for i in range(0,5):
+    builder = ""
+    for j in range(0,5):
+      word = board[counter]
+      temp = formatting - len(word)
+      word = " "*((temp//2)+temp%2) + word + " "*((temp//2))
+      builder += "|"+word+"|"
+      counter+=1
+    print(builder)
+    print("-"*((formatting+2)*5))
+
+def display_spymaster_board(playerboard, spymasterboard):
+  board = playerboard + ["bystander", "red", "blue", "assassin"]
+  formatting = len(max(board, key=len))
+  print("-"*((formatting+2)*5))
+  for i in range(0,5):
+    builder1 = ""
+    builder2 = ""
+    for j in range(0,5):
+      word = spymasterboard[j+i*5][0]
+      label = spymasterboard[j+i*5][1]
+      temp_word = formatting - len(word)
+      temp_label = formatting - len(label)
+      word = " "*((temp_word//2)+temp_word%2) + word + " "*((temp_word//2))
+      label = " "*((temp_label//2)+temp_label%2) + label + " "*((temp_label//2))
+      builder1 += "|"+word+"|"
+      builder2 += "|"+label+"|"
+    print(builder1)
+    print(builder2)
+    print("-"*((formatting+2)*5))
 
 
 if __name__ == '__main__':
   
-  player, spymaster, first = generate_board(wv)
+  player, spymaster, first, player_edit = generate_board(wv)
 
-  print(player)
-  print(spymaster)
-  print(first)
+  #print(player)
+  #print(player_edit)
+  #print(spymaster)
+  #print(first)
+
+  #display_player_board(player)
+  display_spymaster_board(player, player_edit)
+  #display_spymaster_board(player, spymaster)
 
   # clue = ("suit", 2)
   # LoW = [ "armor", "spring", "romans", "tuxedo" ]
