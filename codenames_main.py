@@ -163,7 +163,7 @@ def first_valid_word(words, similar_words, threshold = 0.6):
   return (None, 0)
 
 
-# Function given from Prof. Dodds :)
+# Function given from Prof. Dodds :-)
 def make_codenames_guess( clue, LoW, m ):
     """
         m == word-vector model from somewhere!
@@ -192,11 +192,12 @@ def generate_board(model):
     if the words chosen exist in the model
 
   Output:
-  - player_board is a list of strings which represents the board of words
+  - gamewords is a list of strings which represents the board of words
   - spymaster_board is a list of tuples (word, type) which represents the
     board of words with the type of each word
     (such as whether the word is red, blue, bystander, assassin)
   - first is a string saying which team (red or blue) is going first
+  - player_edit_board is a list of tuples (word, ) which represents the unedited board
   """
   
   # let's read in our word data...
@@ -208,7 +209,7 @@ def generate_board(model):
   A = df.values
 
   # Initialize lists and values
-  player_board = []
+  gamewords = []
   player_edit_board = []
   spymaster_board = []
   not_valid = []
@@ -232,7 +233,7 @@ def generate_board(model):
     ["bystander"] * num_bystander + ["assassin"] * num_assassin
 
   # Repeat until the board is completely filled up
-  while len(player_board) < 25:
+  while len(gamewords) < 25:
       rand_card = list(random.choice(A))
       word1 = rand_card[0]
       word2 = rand_card[1]
@@ -245,7 +246,7 @@ def generate_board(model):
           rand_word = rand_card[random.randint(0, 1)]
           
           # Adds the random word to the player board
-          player_board.append(rand_word)
+          gamewords.append(rand_word)
           player_edit_board.append((rand_word, ""))
 
           
@@ -253,9 +254,9 @@ def generate_board(model):
           rand_option = random.choice(options)
           spymaster_board.append((rand_word, rand_option))
           options.remove(rand_option)
-  return player_board, spymaster_board, first, player_edit_board
+  return gamewords, spymaster_board, first, player_edit_board
 
-def display_player_board(board):
+def display_gamewords(board):
   formatting = len(max(board, key=len))
   print("-"*((formatting+2)*5))
   counter = 0
@@ -270,9 +271,9 @@ def display_player_board(board):
     print(builder)
     print("-"*((formatting+2)*5))
 
-def display_spymaster_board(playerboard, spymasterboard):
-  board = playerboard + ["bystander", "red", "blue", "assassin"]
-  formatting = len(max(board, key=len))
+def display_board(gamewords, board):
+  gamewords = gamewords + ["bystander", "red", "blue", "assassin"]
+  formatting = len(max(gamewords, key=len))
   print("-"*((formatting+2)*5))
   for i in range(0,5):
     builder1 = ""
@@ -290,17 +291,67 @@ def display_spymaster_board(playerboard, spymasterboard):
     print(builder2)
     print("-"*((formatting+2)*5))
 
+def guess_word(spymasterboard, playerboard, gamewords, guessword):
+  """
+  Edits the current game board to reflect a guess made on a word
+  
+  Input:
+  - spymasterboard is a board (list) of tuples 
+  
+  Output:
+  - updated_player_board is a board with the guess "revealing" the type of the chosen word
+  - type is the type of the card guessed
+  """
+  
+  if guessword not in gamewords:
+    print("You inputted an invalid word, please try again")
+    return [], None
+  
+  index = gamewords.index(guessword)
+
+  if playerboard[index][1] != "":
+    print("You inputted an already guessed word, please try again")
+    return [], None
+
+  playerboard[index] = spymasterboard[index]
+
+return playerboard, playerboard[index][1]
+
+
+def finished_game(playerboard, firstteam):
+  """
+  - Checks if the given playerboard is a completed board (meaning that the game has finished).
+  - Condition for a completed game: Either one team has guessed every word of theirs 
+    or one team has chosen the assassin word.
+  """
+  if firstteam.strip().lower() = "red":
+    countRedWords = 9
+    countBlueWords = 8
+  elif firstteam.strip().lower() = "blue":
+    countRedWords = 8
+    countBlueWords = 9
+
+  for card in playerboard:
+    if card[1] = "red":
+      countRedWords -= 1
+    elif card[1] = "blue":
+      countBlueWords -= 1
+    
+    if countRedWords == 0 or countBlueWords == 0 or card[1] == "assassin":
+      return True
+  return False
+      
 
 if __name__ == '__main__':
   
-  player, spymaster, first, player_edit = generate_board(wv)
+  gamewords, spymaster, first, player_edit = generate_board(wv)
 
   #print(player)
   #print(player_edit)
   #print(spymaster)
   #print(first)
 
-  #display_player_board(player)
+  #display_gamewords(player)
   display_spymaster_board(player, player_edit)
   #display_spymaster_board(player, spymaster)
 
