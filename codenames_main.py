@@ -52,10 +52,11 @@ def guess_words_given_clue(clue, board, model):
   # Iterates through each word in the board and adds each tuple
   # of the similarity_score from the similarity function and
   # its corresponding_word to our rank list
-  for word in board:
-    score = wv.similarity(clue, word)
-    score = max(score[0], score[1])
-    rank.append((score,word))
+  for word_type in board:
+    if word_type[1] == "":
+      potential_guess = word_type[0]
+      score = wv.similarity(potential_guess, word)
+      rank.append((score, potential_guess))
 
   # Sort the list in descending score
   rank.sort(reverse=True)
@@ -316,7 +317,7 @@ def guess_word(spymasterboard, playerboard, gamewords, guessword):
   """
   
   if guessword not in gamewords:
-    print("You inputted an invalid word, please try again")
+    print(f"You inputted the invalid word {guessword}, please try again")
     return [], None
   
   index = gamewords.index(guessword)
@@ -406,17 +407,17 @@ def play_game(m):
     clueword = input("Input your clue word:\n")
     while invalid(clueword, gamewords, m):
       clueword = input("Your clue was invalid or not in the model, try again:\n")
-    n = input("Input the number:\n")
+    n = input("\nInput the number:\n")
 
     clue = (clueword, n)
-    guess = guess_words_given_clue(clue, gamewords, m)
-    
+    guess = guess_words_given_clue(clue, current_board, m)
+    print
     for score_and_guess in guess:
       guessword = score_and_guess[1]
       current_board, card_type = guess_word(spymaster_board, current_board, gamewords, guessword)
       if current_board == [] or card_type == None:
         print("Uh oh ... invalid guess by computer. Please restart game.")
-        return None
+        return False
 
       print(f"The computer guessed {guessword}, a {card_type} card.")
       if card_type != guesser:
@@ -424,12 +425,12 @@ def play_game(m):
         break
 
       if finished_game(current_board, first, guesser):
-        again = input("The game ended. Do you want to play again? y or n")
+        again = input("\nThe game ended. Do you want to play again? y or n\n")
         if again == "y":
-          playgame(m)
+          return True
         else:
-          return None
-  return None
+          return False
+  return False
     
     
 
