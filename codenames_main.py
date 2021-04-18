@@ -420,7 +420,10 @@ def play_game(m):
         return False
 
       print(f"The computer guessed {guessword}, a {card_type} card.")
-      if card_type != guesser:
+      if card_type == "assassin":
+        pass
+      
+      elif card_type != guesser:
         print(f"{guessword} is not one of your words. You lose your remaining guesses.")
         break
 
@@ -432,9 +435,12 @@ def play_game(m):
           return False
   return False
     
-    
-
+  
 if __name__ == '__main__':
-  play_game(wv)
+  continue_to_play = True
+  while continue_to_play:
+    continue_to_play = play_game(wv)
+
+  print("\n\n\nThanks for playing!")
 
   
