@@ -1,4 +1,4 @@
-s.
+
 # We import Googles word2vec model. It contains over 3 million words.
 # This import can take awhile.
 
