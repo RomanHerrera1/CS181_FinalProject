@@ -143,22 +143,23 @@ def does_not_share(a, b):
   return True
 
 
-def first_valid_word(words, similar_words, threshold = 0.6):
+def first_valid_word(gamewords, similar_words, threshold = 0.6):
   """ 
   helper function that returns the first word that 
   fits the qualifications for a clue and its score
   """
-  do_not_put = "0123456789!_?*&"
+  do_not_put = "0123456789!_?*& "
   for clue_word in similar_words:
     if clue_word[1] > threshold:
       curr = clue_word[0]
 
       words_not_in_curr = True
-      for word in words:
-        if word in curr:
-          words_not_in_curr = False  
+      for word in gamewords:
+        if (word in curr) or (curr in word):
+          words_not_in_curr = False 
+          break 
       
-      if words_not_in_curr and (curr not in words) and does_not_share(curr, do_not_put):
+      if words_not_in_curr and does_not_share(curr, do_not_put):
         return clue_word
   return (None, 0)
 
@@ -218,16 +219,19 @@ def generate_board(model):
   num_bystander = 7
   num_assassin = 1
   first = ""
+  second = ""
 
   # Randomly determines which team gets the extra card and goes first
   if random.randint(0,1) == 1:
       num_red = 9
       num_blue = 8
       first = "red"
+      second = "blue"
   else:
       num_red = 8
       num_blue = 9
       first = "blue"
+      second = "red"
 
   options = ["red"] * num_red + ["blue"] * num_blue +\
     ["bystander"] * num_bystander + ["assassin"] * num_assassin
@@ -254,9 +258,11 @@ def generate_board(model):
           rand_option = random.choice(options)
           spymaster_board.append((rand_word, rand_option))
           options.remove(rand_option)
-  return gamewords, spymaster_board, first, player_edit_board
+  return gamewords, spymaster_board, player_edit_board, first, second
 
 def display_gamewords(board):
+  """
+  """
   formatting = len(max(board, key=len))
   print("-"*((formatting+2)*5))
   counter = 0
@@ -272,6 +278,9 @@ def display_gamewords(board):
     print("-"*((formatting+2)*5))
 
 def display_board(gamewords, board):
+  """
+  Prints out a given board, can be player board or spymaster board
+  """
   gamewords = gamewords + ["bystander", "red", "blue", "assassin"]
   formatting = len(max(gamewords, key=len))
   print("-"*((formatting+2)*5))
@@ -318,16 +327,16 @@ def guess_word(spymasterboard, playerboard, gamewords, guessword):
 return playerboard, playerboard[index][1]
 
 
-def finished_game(playerboard, firstteam):
+def finished_game(playerboard, firstteam, guesser):
   """
   - Checks if the given playerboard is a completed board (meaning that the game has finished).
   - Condition for a completed game: Either one team has guessed every word of theirs 
     or one team has chosen the assassin word.
   """
-  if firstteam.strip().lower() = "red":
+  if firstteam.lower() = "red":
     countRedWords = 9
     countBlueWords = 8
-  elif firstteam.strip().lower() = "blue":
+  elif firstteam.lower() = "blue":
     countRedWords = 8
     countBlueWords = 9
 
@@ -337,14 +346,82 @@ def finished_game(playerboard, firstteam):
     elif card[1] = "blue":
       countBlueWords -= 1
     
-    if countRedWords == 0 or countBlueWords == 0 or card[1] == "assassin":
+    if countRedWords == 0:
+      print("Red team won!\n")
+      return True
+    elif countBlueWords == 0:
+      print("Blue team won!\n")
+      return True
+    elif card[1] == "assassin":
+      print(f"{guesser} team lost because they chose the assassin\n")
       return True
   return False
-      
+
+def invalid(clueword, gamewords, m):
+  """
+  Determines if the given word is valid by checking if the word
+  is in gamewords, in the model, or has weird punctuation
+  """
+  do_not_put = "0123456789!_?*& "
+  
+  for word in gamewords:
+    if (word in clueword) or (clueword in word) or (not clueword in m) or (does_not_share(clueword, do_not_put)):
+      return True
+  
+  return False
+  
+def play_game(m):
+  """
+  Starts up a game with a given model to guess words
+  """ 
+  gamewords, spymaster_board, current_board, first, second = generate_board(model)
+
+  counter = 0
+  guesser = first
+
+  while True:
+    if counter % 2 == 0:
+      guesser = first
+    else:
+      guesser = second
+
+    print("\nSpymaster board:\n")
+    display_board(spymaster_board)
+    print("\Player board:\n")
+    display_board(current_board)
+    print()
+    
+    clueword = input("Input your clue word")
+    while invalid(clueword):
+      clueword = input("Your clue was invalid or not in the model, try again")
+    n = input("Input the number")
+
+    clue = (clueword, n)
+    guess = guess_words_given_clue(clue, gamewords, m)
+    
+    for guessword in guess:
+      current_board, card_type = guess_word(spymaster_board, current_board, gamewords, guessword)
+      if current_board == [] or card_type == None:
+        print("Uh oh ... invalid guess by computer. Please restart game.")
+        return None
+
+      print(f"The computer guessed {guessword}, a {card_type} card.")
+      if card_type != guesser:
+        print(f"{guessword} is not one of your words. You lose your remaining guesses.")
+        break
+
+      if finished_game(current_board, first, guesser):
+        again = input("The game ended. Do you want to play again? y or n")
+        if again == "y":
+          playgame(m)
+        else:
+          return None
+    
+    
 
 if __name__ == '__main__':
   
-  gamewords, spymaster, first, player_edit = generate_board(wv)
+  gamewords, spymaster, player_edit, first, second, = generate_board(wv)
 
   #print(player)
   #print(player_edit)
@@ -355,9 +432,4 @@ if __name__ == '__main__':
   display_spymaster_board(player, player_edit)
   #display_spymaster_board(player, spymaster)
 
-  # clue = ("suit", 2)
-  # LoW = [ "armor", "spring", "romans", "tuxedo" ]
-  # m = m  # defined in another cell
-  # LoS = make_codenames_guess( clue, LoW, m )
-  # for pair in LoS:
-  #     print(f"{pair}")
+  
