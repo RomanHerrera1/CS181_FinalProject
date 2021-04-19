@@ -167,27 +167,6 @@ def first_valid_word(gamewords, similar_words, threshold = 0.6):
         return clue_word
   return (None, 0)
 
-
-# Function given from Prof. Dodds :-)
-def make_codenames_guess( clue, LoW, m ):
-    """
-        m == word-vector model from somewhere!
-        LoW == any list of words (strings)
-        clue == a single word (string) 
-    """
-    if clue not in m:
-        print(f"the clue {clue} wasn't in the model!")
-        return []
-    
-    LoS = []  # list of scores
-    for word in LoW:
-        if word not in m:
-            print(f"the word {word} wasn't in the model! Skipping...")
-            continue
-        score = m.distance( clue, word )
-        LoS = LoS + [ (score,word) ]
-    return LoS
-
 def generate_board(model):
   """
   Generates random valid player boards and spymaster boards and returns them
@@ -281,6 +260,124 @@ def display_gamewords(board):
     print(builder)
     print("-"*((formatting+2)*5))
 
+def display_board_color_player(gamewords, board):
+  """
+  Prints out a given board, can be player board or spymaster board
+  """
+  gamewords = gamewords + ["bystander", "red", "blue", "assassin"]
+  formatting = len(max(gamewords, key=len))
+  lines = "-"*((formatting+2)*5)
+  print(f"\033[1;37;40m{lines}")
+  for i in range(0,5):
+    #printint words all in one line
+    for j in range(0,5):
+      n = "" #color variable
+      label = board[j+i*5][1] 
+      if label == "red":
+        n = "31"
+      elif label == "blue":
+        n = "34"
+      elif label == "assassin":
+        n = "35"
+      elif label == "bystander":
+        n = "33"
+      else:
+        n = "37"
+
+      word = board[j+i*5][0]
+      temp_word = formatting - len(word)
+      word = " "*((temp_word//2)+temp_word%2) + word + " "*((temp_word//2))
+      if j < 4:
+        print(f"\033[1;{n};40m|{word}|", end="")
+      else:
+        print(f"\033[1;{n};40m|{word}|")
+    #printing lables all in one line
+    for k in range(0,5):
+      n = ""
+      label = board[k+i*5][1]
+      if label == "red":
+        n = "31"
+      elif label == "blue":
+        n = "34"
+      elif label == "assassin":
+        n = "35"
+      elif label == "bystander":
+        n = "33"
+      else:
+        n = "37"
+
+      temp_label = formatting - len(label)
+      label = " "*((temp_label//2)+temp_label%2) + label + " "*((temp_label//2))
+      if k < 4:
+        print(f"\033[1;{n};40m|{label}|", end="")
+      else:
+        print(f"\033[1;{n};40m|{label}|")
+
+    lines = "-"*((formatting+2)*5)
+    print(f"\033[1;37;40m{lines}")
+
+def display_board_color_spymaster(gamewords, playerboard, spymasterboard):
+  """
+  Prints out a given board, can be player board or spymaster board
+  """
+  gamewords = gamewords + ["bystander", "red", "blue", "assassin"]
+  formatting = len(max(gamewords, key=len))
+  lines = "-"*((formatting+2)*5)
+  print(f"\033[1;37;40m{lines}")
+  for i in range(0,5):
+    #printing words all in one line
+    for j in range(0,5):
+      n = "" #color variable
+      label = spymasterboard[j+i*5][1] 
+      if label == "red":
+        n = "31"
+      elif label == "blue":
+        n = "34"
+      elif label == "assassin":
+        n = "35"
+      elif label == "bystander":
+        n = "33"
+      else:
+        n = "37"
+      
+      if spymasterboard[i][j] == playerboard[i][j]:
+        n = "37"
+
+      word = spymasterboard[j+i*5][0]
+      temp_word = formatting - len(word)
+      word = " "*((temp_word//2)+temp_word%2) + word + " "*((temp_word//2))
+      if j < 4:
+        print(f"\033[1;{n};40m|{word}|", end="")
+      else:
+        print(f"\033[1;{n};40m|{word}|")
+    #printing lables all in one line
+    for k in range(0,5):
+      n = ""
+      label = spymasterboard[k+i*5][1]
+      if label == "red":
+        n = "31"
+      elif label == "blue":
+        n = "34"
+      elif label == "assassin":
+        n = "35"
+      elif label == "bystander":
+        n = "33"
+      else:
+        n = "37"
+
+      if spymasterboard[i][k] == playerboard[i][k]:
+        n = "37"
+
+      temp_label = formatting - len(label)
+      label = " "*((temp_label//2)+temp_label%2) + label + " "*((temp_label//2))
+      if k < 4:
+        print(f"\033[1;{n};40m|{label}|", end="")
+      else:
+        print(f"\033[1;{n};40m|{label}|")
+
+    lines = "-"*((formatting+2)*5)
+    print(f"\033[1;37;40m{lines}")
+
 def display_board(gamewords, board):
   """
   Prints out a given board, can be player board or spymaster board
@@ -367,8 +464,9 @@ def invalid(clueword, gamewords, m):
   is in gamewords, in the model, or has weird punctuation
   """
   do_not_put = "0123456789!_?*& "
-  
+  clueword = clueword.lower()
   for word in gamewords:
+    word = word.lower() 
     if (word in clueword) or (clueword in word) or (not clueword in m) or (not does_not_share(clueword, do_not_put)):
 
       #print(f"(word in clueword): {(word in clueword)}")
@@ -399,9 +497,9 @@ def play_game(m):
     counter += 1
     print(f"\nIt is {guesser} team's turn.\n")
     print("\nSpymaster board:\n")
-    display_board(gamewords, spymaster_board)
+    display_board_color_spymaster(gamewords, spymaster_board)
     print("\nPlayer board:\n")
-    display_board(gamewords, current_board)
+    display_board_color_player(gamewords, current_board)
     print()
     
     clueword = input("Input your clue word:\n")
@@ -411,7 +509,7 @@ def play_game(m):
 
     clue = (clueword, n)
     guess = guess_words_given_clue(clue, current_board, m)
-    print
+    print(f"\nThe computer is thinking of guessing {guess}\n")
     for score_and_guess in guess:
       guessword = score_and_guess[1]
       current_board, card_type = guess_word(spymaster_board, current_board, gamewords, guessword)
@@ -437,6 +535,18 @@ def play_game(m):
     
   
 if __name__ == '__main__':
+  x="test"
+  # print(f"\033[1;34;40m|{x}|", end = "")
+  # print("\033[1;32;40mhi2")
+  # print("\033[1;37;40mhi3")
+
+  # gamewords, spymaster_board, current_board, first, second = generate_board(wv)
+  # print("\nSpymaster board:\n")
+  # display_board_color(gamewords, spymaster_board)
+  # print("\nPlayer board:\n")
+  # display_board_color(gamewords, current_board)
+  # print()
+
   continue_to_play = True
   while continue_to_play:
     continue_to_play = play_game(wv)
