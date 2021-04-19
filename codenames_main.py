@@ -187,7 +187,7 @@ def generate_board(model):
   # let's read in our word data...
   filename = 'Wordlist.csv'
   df = pd.read_csv(filename, header=None)   # encoding="latin1" et al.
-  print(f"{filename} : file read into a pandas dataframe.")
+  # print(f"{filename} : file read into a pandas dataframe.")
 
   # Convert to a numpy array
   A = df.values
@@ -340,7 +340,7 @@ def display_board_color_spymaster(gamewords, playerboard, spymasterboard):
       else:
         n = "37"
       
-      if spymasterboard[i][j] == playerboard[i][j]:
+      if spymasterboard[j+i*5] == playerboard[j+i*5]:
         n = "37"
 
       word = spymasterboard[j+i*5][0]
@@ -365,7 +365,7 @@ def display_board_color_spymaster(gamewords, playerboard, spymasterboard):
       else:
         n = "37"
 
-      if spymasterboard[i][k] == playerboard[i][k]:
+      if spymasterboard[k+i*5] == playerboard[k+i*5]:
         n = "37"
 
       temp_label = formatting - len(label)
@@ -497,7 +497,7 @@ def play_game(m):
     counter += 1
     print(f"\nIt is {guesser} team's turn.\n")
     print("\nSpymaster board:\n")
-    display_board_color_spymaster(gamewords, spymaster_board)
+    display_board_color_spymaster(gamewords, current_board, spymaster_board)
     print("\nPlayer board:\n")
     display_board_color_player(gamewords, current_board)
     print()
@@ -509,7 +509,12 @@ def play_game(m):
 
     clue = (clueword, n)
     guess = guess_words_given_clue(clue, current_board, m)
-    print(f"\nThe computer is thinking of guessing {guess}\n")
+
+    guess_words = []
+    for pair in guess:
+      guess_words.append(pair[1])
+      
+    print(f"\nThe computer is thinking of guessing {guess_words}\n")
     for score_and_guess in guess:
       guessword = score_and_guess[1]
       current_board, card_type = guess_word(spymaster_board, current_board, gamewords, guessword)
