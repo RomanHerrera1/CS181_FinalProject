@@ -89,7 +89,6 @@ def score_clue(clue, board, intended, model):
     # can also check how well assassin and other team words ranked
       
 
-
 def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = []):
   """
   Given a team color and a board, it will use the word2vec model to return a valid clue
@@ -112,24 +111,23 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
   num_words = 0
   max_score = 0
   clueword = ""
+  min_size = 1
 
   if len(own_words) == 1:
     word, score = first_valid_word([own_words[0]], model.most_similar(positive=[own_words[0]], topn=100))
-    return word
+    return (word, 1), own_words[0]
   
-  for i in range(min(5, len(own_words)), 1, -1):
+  if len(own_words) <= 2:
+    min_size = 0
+    
+  for i in range(min(4, len(own_words)), min_size, -1):
       comb = combinations(own_words, i)
       for combo in comb:
-        word, score = first_valid_word(combo, model.most_similar(positive=[combo], topn=100))
-        word2, score2 = first_valid_word([word.lower() for word in combo], model.most_similar(positive=[combo], topn=100))
-  
-        if score2 > score:
-          score = score2
-          word = word2
-          
+        word, score = first_valid_word(combo, model.most_similar(positive=list(combo), topn=100))
+        # print(f"This is the word: {word}. This is the score: {score}. What combo? : {combo}")
         # MAY NEED TO CHANGE SCORE SYSTEM
-        if (score * i/2) > max_score:
-          max_score = score
+        if (score + i * 0.01) > max_score:
+          max_score = score + i * 0.01
           num_words = i
           valid_combo = combo
           clueword = word
