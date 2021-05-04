@@ -88,7 +88,7 @@ def score_clue(clue, board, intended, model):
       
     # can also check how well assassin and other team words ranked
       
-      
+used_clues = []     
 def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = ""):
   """
   Given a team color and a board, it will use the word2vec model to return a valid clue
@@ -108,7 +108,8 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
   """
 
   print("Please hold as the computer thinks of a clue. (May take up to 1 min)\n")
-  
+  global used_clues
+
   min_size = 1
 
   valid_combo = []
@@ -152,6 +153,8 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
         bad_clue = False
 
         # we want our emergency words to not be related to the assassin
+        if word in used_words:
+          continue
 
         if assassin_word != "" and wv.similarity(word, assassin_word) > 0.7:
           #print(f"{word} is too similar to the assassin")
@@ -194,8 +197,10 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
     #   print(f"rand_word: {rand_word}. Combo: {combo}. word: {word}. score:{score}")
     #   return (word, 1), combo
     print("There were no clear clues. Here's an emergency clue.")
+    used_word.append(emergency_clueword)
     return (emergency_clueword, len(emergency_valid_combo)), emergency_valid_combo
 
+  used_words.append(clueword)
   return (clueword, len(valid_combo)), valid_combo
 
 def does_not_share(a, b):
@@ -216,10 +221,12 @@ def first_valid_word(gamewords, similar_words, threshold = 0.5):
   for clue_word in similar_words:
     if clue_word[1] > threshold:
       curr = clue_word[0]
+      curr.lower()
 
       words_not_in_curr = True
       for word in gamewords:
-        if (word in curr) or (curr in word) or (word.lower() == curr.lower()):
+        word.lower()
+        if (word in curr) or (curr in word):
           words_not_in_curr = False 
           break 
       
@@ -660,16 +667,27 @@ def play_game_as_player(m):
 
       while invalid:
         answer = input("Input a guess (case-sensitive) or type -1 to end turn:\n")
-      
+        if answer == "-1":
+          break
         current_board, card_type = guess_word(spymaster_board, current_board, gamewords, answer)
         if card_type is not None or answer == "-1":
           invalid = False
           
       if answer == "-1":
-          break
+        break
 
-      print(f"You guessed {answer}, a {card_type} card.")
+      print(f"\nYou guessed {answer}, a {card_type} card.")
 
+      if card_type == "red":
+        red_words.remove(answer)
+
+      if card_type == "blue":
+        blue_words.remove(answer)
+      
+      if card_type == "neutral":
+        neutral_words.remove(answer)
+      
+      
       print("\nPlayer board:\n")
       display_board_color_player(gamewords, current_board)
       print()  
