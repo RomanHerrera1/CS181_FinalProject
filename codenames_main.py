@@ -12,9 +12,9 @@ import numpy as np
 # import seaborn as sns
 # sns.set(style="darkgrid")
 # import nltk
-# import textblob
+import textblob
 import pandas as pd
-# from textblob import Word
+from textblob import Word
 # from textblob.wordnet import VERB
 # from textblob.wordnet import Synset
 # from textblob import TextBlob
@@ -666,9 +666,12 @@ def play_game_as_player(m):
       answer = ""
 
       while invalid:
-        answer = input("Input a guess (case-sensitive) or type -1 to end turn:\n")
+        answer = input("Input a guess (case-sensitive). Type -1 to end turn or ? to define the clue:\n")
         if answer == "-1":
           break
+        if answer == "?":
+          print(f"The defintion is:\n {Word(clueword).definitions}")
+          continue
         current_board, card_type = guess_word(spymaster_board, current_board, gamewords, answer)
         if card_type is not None or answer == "-1":
           invalid = False
