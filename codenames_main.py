@@ -153,7 +153,7 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
         bad_clue = False
 
         # we want our emergency words to not be related to the assassin
-        if word in used_words:
+        if word in used_clues:
           continue
 
         if assassin_word != "" and wv.similarity(word, assassin_word) > 0.7:
@@ -200,7 +200,7 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
     used_word.append(emergency_clueword)
     return (emergency_clueword, len(emergency_valid_combo)), emergency_valid_combo
 
-  used_words.append(clueword)
+  used_clues.append(clueword)
   return (clueword, len(valid_combo)), valid_combo
 
 def does_not_share(a, b):
