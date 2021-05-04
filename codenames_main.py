@@ -166,7 +166,86 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
 
   return (clueword, len(valid_combo)), valid_combo
 
+def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = ""):
+  """
+  Given a team color and a board, it will use the word2vec model to return a valid clue
+  using various heuristics
 
+  Inputs:
+  - own_words is the list of your team's words
+  - opponent_words is words your other team has
+  - neutral_words are gray words, but we still don't want our team to select those
+  - asssasin_word is the assassin word
+  - model is the word2vec model used for the guessing
+
+  Output:
+  - A clue is a tuple that contains a one word string and an integer that
+    is the number of words associated with the clue in the format (clueword, n)
+  - valid_combo is the words intended to be guesses, written as a list of strings
+  """
+
+  print("Please hold as the computer thinks of a clue. (May take up to 1 min)")
+
+  valid_combo = []
+  num_words = 0
+  max_score = .5
+  clueword = ""
+  min_size = 1
+
+  # If there is only 1 remaining word, just use the most similar word to the last word
+  if len(own_words) == 1:
+    word, score = first_valid_word([own_words[0]], model.most_similar(positive=[own_words[0]], topn=100))
+    return (word, 1), own_words[0]
+  
+  if len(own_words) <= 2:
+    min_size = 0
+    
+  for i in range(min(2, len(own_words)), min_size, -1):
+    comb = combinations(own_words, i)
+    for combo in comb:
+      word, score = first_valid_word(combo, model.most_similar(positive=list(combo), topn=100))
+        
+      # TODO: CHANGE SCORING SYSTEM
+      
+      # Checks to see if new similarity score is better than the previous.
+      # Slightly favors clues that hint at more words
+      if (score + i * 0.01) > max_score:            
+        print(f"This is the word: {word}. This is the score: {score}. What combo? : {combo}")
+        bad_clue = False
+      
+        if assassin_word != "" and wv.similarity(word, assassin_word) > 0.7:
+          print(f"{word} is too similar to the assassin")
+          continue   # clue doesn't work
+        
+        if opponent_words is not []:
+          for bad_word in opponent_words:
+            if wv.similarity(word, bad_word) > 0.73:
+              print(f"{word} is too similar to {bad_word}")
+              bad_clue = True # clue doesn't work
+              break
+            
+          if bad_clue == True: # the clue is too related to one of the opponent words 
+            continue
+          
+        # Goes through neutral words to see if they are too related to the clue   
+        if neutral_words is not []:
+          for neutral_word in neutral_words:
+            if wv.similarity(word, neutral_word) > 0.75:
+              print(f"{word} is too similar to {neutral_word}")
+              bad_clue = True   # clue doesn't work
+              break
+
+          if bad_clue == True: # the clue is too related to one of the neutral words 
+            continue
+
+        # clue works so we update it
+        print("Was a successful clue!")
+        max_score = score + i * 0.01
+        num_words = i
+        valid_combo = combo
+        clueword = word
+          
+  return (clueword, len(valid_combo)), valid_combo
 
 def does_not_share(a, b):
   """ 
@@ -571,7 +650,7 @@ def play_game(m):
     
   
 if __name__ == '__main__':
-  x="test"
+  
   # print(f"\033[1;34;40m|{x}|", end = "")
   # print("\033[1;32;40mhi2")
   # print("\033[1;37;40mhi3")
@@ -582,11 +661,20 @@ if __name__ == '__main__':
   # print("\nPlayer board:\n")
   # display_board_color(gamewords, current_board)
   # print()
+  own_words = ["phoenix", "pirate", "leprechaun", "needle", "kid", "card", "diamond", "ivory", "paste"]
+  bad_words = ["Jupiter", "laser", "eye", "olive", "bottle", "disease", "moon", "bond"]
+  neutral_words = ["engine", "shot", "spider", "bark", "India", "maple", "plate"]
+  assassin = "field"
 
-  continue_to_play = True
-  while continue_to_play:
-    continue_to_play = play_game(wv)
+  clue, intended = give_clue(own_words, wv, opponent_words = bad_words,\
+     neutral_words = neutral_words, assassin_word = assassin)
 
-  print("\n\n\nThanks for playing!")
+  print(f"The final results:\nThis is the clue: {clue}.\nThese are the intended words: {intended}")
+
+  # continue_to_play = True
+  # while continue_to_play:
+  #   continue_to_play = play_game(wv)
+
+  # print("\n\n\nThanks for playing!")
 
   
