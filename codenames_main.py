@@ -89,7 +89,7 @@ def score_clue(clue, board, intended, model):
     # can also check how well assassin and other team words ranked
       
 
-def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = []):
+def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassin_word = ""):
   """
   Given a team color and a board, it will use the word2vec model to return a valid clue
   using various heuristics
@@ -107,12 +107,15 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
   - valid_combo is the words intended to be guesses, written as a list of strings
   """
 
+  print("Please hold as the computer thinks of a clue. (May take up to 1 min)")
+
   valid_combo = []
   num_words = 0
   max_score = 0
   clueword = ""
   min_size = 1
 
+  # If there is only 1 remaining word, just use the most similar word to the last word
   if len(own_words) == 1:
     word, score = first_valid_word([own_words[0]], model.most_similar(positive=[own_words[0]], topn=100))
     return (word, 1), own_words[0]
@@ -125,14 +128,44 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
       for combo in comb:
         word, score = first_valid_word(combo, model.most_similar(positive=list(combo), topn=100))
         # print(f"This is the word: {word}. This is the score: {score}. What combo? : {combo}")
-        # MAY NEED TO CHANGE SCORE SYSTEM
+        
+        # TODO: CHANGE SCORING SYSTEM
+        
+        # Checks to see if new similarity score is better than the previous.
+        # Slightly favors clues that hint at more words
         if (score + i * 0.01) > max_score:
-          max_score = score + i * 0.01
-          num_words = i
-          valid_combo = combo
-          clueword = word
+          bad_clue = False
+          # Goes through opponent and neutral words and crosschecks that the clue does not work better for those
+          # For a certain threshold, choosing opponent is worse than neutral  
+          if assassin_word is not None and wv.similarity(word, assassin_word) > 0.6:
+            continue   # clue doesn't work    
+          elif opponent_words is not []:
+            for bad_word in opponent_words:
+              if wv.similarity(word, bad_word) > 0.6:
+                bad_clue = True # clue doesn't work
+                break
+              
+            if bad_clue == True: # the clue is too related to one of the opponent words 
+              continue
+
+          # Goes through neutral words to see if they are too related to the clue   
+          elif neutral_words is not []:
+            for neutral_word in neutral_words:
+              if wv.similarity(word, neutral_word) > 0.69:
+                bad_clue = True   # clue doesn't work
+                break
+
+            if bad_clue == True: # the clue is too related to one of the neutral words 
+              continue
+
+          else: # clue works so we update it 
+            max_score = score + i * 0.01
+            num_words = i
+            valid_combo = combo
+
 
   return (clueword, len(valid_combo)), valid_combo
+
 
 
 def does_not_share(a, b):
