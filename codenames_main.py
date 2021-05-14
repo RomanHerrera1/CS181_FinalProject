@@ -135,7 +135,7 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
   for i in range(min(3, len(own_words)), min_size, -1):
     comb = combinations(own_words, i)
     for combo in comb:
-      word, score = first_valid_word(combo, model.most_similar(positive=list(combo), topn=100))
+      word, score = first_valid_word(combo, model.most_similar(positive=list(combo), topn=50))
         
       # TODO: CHANGE SCORING SYSTEM
       
@@ -197,7 +197,7 @@ def give_clue(own_words, model, opponent_words = [], neutral_words = [], assassi
     #   print(f"rand_word: {rand_word}. Combo: {combo}. word: {word}. score:{score}")
     #   return (word, 1), combo
     print("There were no clear clues. Here's an emergency clue.")
-    used_word.append(emergency_clueword)
+    used_clues.append(emergency_clueword)
     return (emergency_clueword, len(emergency_valid_combo)), emergency_valid_combo
 
   used_clues.append(clueword)
@@ -739,7 +739,14 @@ if __name__ == '__main__':
 
   continue_to_play = True
   while continue_to_play:
-    continue_to_play = play_game_as_player(wv)
+    game_type = input("Input which role you would like to play: Player or Spymaster?\n")
+    if game_type.lower() == "player":
+      continue_to_play = play_game_as_player(wv)
+    elif game_type.lower() == "spymaster":
+      continue_to_play = play_game_as_spymaster(wv)
+    else:
+      print("\nInvalid input. Please type Player or Spymaster.\n")
+
 
   print("\n\n\nThanks for playing!")
 
